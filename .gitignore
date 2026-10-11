@@ -1,0 +1,7 @@
+target/
+.idea/
+*.iml
+config/local.properties
+data/generated/
+results/
+.env
