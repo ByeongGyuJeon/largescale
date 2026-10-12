@@ -5,7 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-public record AppConfig(Path csvPath, char delimiter, String dbUrl) {
+public record AppConfig(Path csvPath, char delimiter, String dbUrl, int batchSize) {
+    public AppConfig {
+        if (batchSize <= 0) throw new IllegalArgumentException("batch.size must be positive");
+    }
     public static AppConfig load(Path file) throws IOException {
         Properties p = new Properties();
         try (var reader = Files.newBufferedReader(file)) { p.load(reader); }
@@ -18,6 +21,7 @@ public record AppConfig(Path csvPath, char delimiter, String dbUrl) {
         if (!Files.isRegularFile(csv)) throw new IllegalArgumentException("CSV file not found: " + csv);
         String url = p.getProperty("db.url", "");
         if (!url.startsWith("jdbc:mysql:")) throw new IllegalArgumentException("db.url must be a MySQL JDBC URL");
-        return new AppConfig(csv, delimiter, url);
+        int batchSize = Integer.parseInt(p.getProperty("batch.size", "1000"));
+        return new AppConfig(csv, delimiter, url, batchSize);
     }
 }
