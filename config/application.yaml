@@ -1,0 +1,9 @@
+# Relative CSV paths resolve from the current working directory.
+csv:
+  path: data/sample.csv
+  delimiter: comma # comma or tab
+batch:
+  size: 1000 # One transaction per batch, including the final partial batch.
+db:
+  url: "jdbc:mysql://localhost:3306/largescale?characterEncoding=UTF-8&connectTimeout=5000&socketTimeout=30000"
+# Set APP_DB_USER and APP_DB_PASSWORD in the environment.

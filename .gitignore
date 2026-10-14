@@ -2,8 +2,8 @@
 build/
 .idea/
 *.iml
-config/local.properties
+config/local.yaml
+config/local.yml
 data/generated/
 results/
 .env
-target/

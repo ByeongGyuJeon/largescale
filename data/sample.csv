@@ -1,4 +1,4 @@
 id,user_id,event,value,payload
-1,101,page_view,1.000000,"{""page"":""home""}"
-2,101,purchase,19.990000,"쉼표, 따옴표 ""예시"""
-3,102,login,\N,\N
+1,user-0000,page_view,123.45,abcdefghij
+2,user-0001,purchase,19.99,"쉼표, 따옴표 ""예시"""
+3,user-0000,login,\N,\N

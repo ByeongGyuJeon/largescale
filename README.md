@@ -22,17 +22,31 @@ $env:APP_DB_PASSWORD = 'your_password'
 .\gradlew.bat run --args="load"
 ```
 
-접속 주소·CSV 경로는 `config/application.properties`에 있습니다. 설정을 복사한 `config/local.properties`는 Git 제외 대상입니다.
-`batch.size=1000`이 기본값이며, 양의 정수로 변경할 수 있습니다. 100 / 1,000 / 5,000행 단위로 비교합니다.
+접속 주소·CSV 경로는 `config/application.yaml`에 있습니다. 설정을 복사한 `config/local.yaml`는 Git 제외 대상입니다.
+YAML의 `batch.size` 기본값은 1,000이며, 양의 정수로 변경할 수 있습니다. 100 / 1,000 / 5,000행 단위로 비교합니다.
 각 레코드를 `addBatch()`로 추가하고 설정한 수량마다 `executeBatch()`와 `commit()`을 실행합니다. 마지막 잔여 배치도 커밋합니다.
 
 ```powershell
-.\gradlew.bat run --args="validate config/local.properties"
-.\gradlew.bat run --args="load config/local.properties"
+.\gradlew.bat run --args="validate config/local.yaml"
+.\gradlew.bat run --args="load config/local.yaml"
 ```
 
 상대 경로는 실행한 현재 폴더 기준입니다. 사용자·비밀번호는 환경 변수로만 설정하며 커밋하지 않습니다.
 실행 명령은 테이블 생성·초기화 SQL을 자동 실행하지 않습니다. 반복 실험 전 전용 테스트 테이블에서 `sql/reset.sql`을 직접 실행하고, 적재 후 `sql/verify.sql`로 결과를 확인합니다.
+
+## YAML 설정
+
+`config/application.yaml` 예시입니다. 비밀번호는 기존처럼 환경 변수로 지정합니다.
+
+```yaml
+csv:
+  path: data/sample.csv
+  delimiter: comma
+batch:
+  size: 1000
+db:
+  url: "jdbc:mysql://localhost:3306/largescale?characterEncoding=UTF-8&connectTimeout=5000&socketTimeout=30000"
+```
 
 ## 배포와 실행
 
@@ -56,13 +70,14 @@ Gradle Wrapper 배포판 다운로드에는 공식 SHA-256 체크섬 검증을 �
 | 컬럼 | 초기 MySQL 타입 | 규칙 |
 |---|---|---|
 | id | BIGINT PRIMARY KEY | CSV에서 지정, 중복은 DB 오류 |
-| user_id | BIGINT NOT NULL | 정수 |
+| user_id | VARCHAR(100) NOT NULL | `user-0000` 같은 문자열, 1~100 문자 |
 | event | VARCHAR(100) NOT NULL | 1~100 문자 |
 | value | DECIMAL(20,6) NULL | 반올림 없이 표현 가능한 숫자 |
 | payload | TEXT NULL | UTF-8 최대 65,535바이트, 원문 문자열 보존 |
 
-타입은 실제 데이터가 아직 제공되지 않아 둔 **초기 가정**입니다. 실제 value가 문자열이거나 payload가 더 크면 DDL·모델·검증을 함께 변경합니다. payload를 JSON으로 강제하지 않습니다.
+제공한 샘플의 `user_id` 문자열과 숫자 `value`를 반영했습니다. 최대 길이·정밀도·NULL 허용은 **초기 가정**입니다. 실제 value가 문자열이거나 payload가 더 크면 DDL·모델·검증을 함께 변경합니다. payload를 JSON으로 강제하지 않습니다.
 `\N`은 value/payload의 NULL 표기이며 빈 payload는 빈 문자열로 보존합니다. 빈 value는 오류입니다.
+기존 `user_id BIGINT` 테이블은 `sql/migrate-user-id.sql`로 타입을 변경할 수 있습니다. 기존 숫자 ID는 숫자 문자열로 변환되므로 `user-0000` 같은 원본 식별자는 CSV에서 다시 적재합니다.
 
 ## 구조
 
@@ -96,7 +111,7 @@ src/test/           CSV 계약·배치 트랜잭션 검증
 
 ## 확인한 범위
 
-빌드·패키징 성공, CSV 파싱 6개와 배치 처리 9개 테스트 통과, Gradle 실행·배포 스크립트에서 샘플 3행 검증을 확인했습니다.
+빌드·패키징 성공, CSV 파싱 9개·배치 처리 9개·YAML 설정 6개 테스트 통과, Gradle 실행·배포 스크립트에서 샘플 3행 검증을 확인했습니다.
 배치 테스트는 JDBC 테스트 더블로 전체/잔여/빈 배치, 파싱·실행·커밋 실패 시 롤백, NULL 바인딩을 검증합니다.
 실제 MySQL 연결·INSERT는 접속 환경이 제공되지 않아 아직 검증하지 않았습니다.
 

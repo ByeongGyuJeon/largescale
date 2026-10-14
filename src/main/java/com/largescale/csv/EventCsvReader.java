@@ -28,6 +28,9 @@ public final class EventCsvReader {
                 long number = record.getRecordNumber();
                 try {
                     if (record.size() != HEADER.size()) throw new IllegalArgumentException("Expected 5 fields");
+                    String userId = record.get("user_id");
+                    if (userId == null || userId.isBlank() || userId.codePointCount(0, userId.length()) > 100)
+                        throw new IllegalArgumentException("user_id must contain 1..100 characters");
                     String event = record.get("event");
                     if (event == null || event.isEmpty() || event.codePointCount(0, event.length()) > 100)
                         throw new IllegalArgumentException("event must contain 1..100 characters");
@@ -37,7 +40,7 @@ public final class EventCsvReader {
                     String payload = record.get("payload");
                     if (payload != null && payload.getBytes(StandardCharsets.UTF_8).length > 65535)
                         throw new IllegalArgumentException("payload exceeds TEXT byte limit");
-                    var row = new EventRow(Long.parseLong(record.get("id")), Long.parseLong(record.get("user_id")), event, value, payload);
+                    var row = new EventRow(Long.parseLong(record.get("id")), userId, event, value, payload);
                     consumer.accept(row, number);
                     count++;
                 } catch (Exception e) {

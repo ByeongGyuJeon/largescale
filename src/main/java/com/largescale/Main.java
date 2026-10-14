@@ -9,13 +9,13 @@ import java.util.Locale;
 public final class Main {
     public static void main(String[] args) {
         if (args.length == 0 || args[0].equals("--help")) {
-            System.out.println("Usage: java -jar target/largescale-0.1.0-SNAPSHOT.jar <validate|load> [config-file]");
+            System.out.println("Usage: largescale <validate|load> [config-file.yaml]");
             return;
         }
         try {
             if (args.length > 2 || !(args[0].equals("validate") || args[0].equals("load")))
                 throw new IllegalArgumentException("Command must be validate or load; multithread mode is future work");
-            var config = AppConfig.load(Path.of(args.length == 2 ? args[1] : "config/application.properties"));
+            var config = AppConfig.load(Path.of(args.length == 2 ? args[1] : "config/application.yaml"));
             if (args[0].equals("validate")) {
                 long count = new EventCsvReader().read(config.csvPath(), config.delimiter(), (row, number) -> {});
                 System.out.println("CSV validation passed; rows=" + count + " (DB untouched)");

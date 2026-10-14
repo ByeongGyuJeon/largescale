@@ -52,7 +52,7 @@ public final class BatchLoader implements CsvLoader {
 
     private static void bind(PreparedStatement statement, EventRow row) throws SQLException {
         statement.setLong(1, row.id());
-        statement.setLong(2, row.userId());
+        statement.setString(2, row.userId());
         statement.setString(3, row.event());
         if (row.value() == null) statement.setNull(4, Types.DECIMAL); else statement.setBigDecimal(4, row.value());
         if (row.payload() == null) statement.setNull(5, Types.LONGVARCHAR); else statement.setString(5, row.payload());
