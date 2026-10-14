@@ -1,7 +1,9 @@
-target/
+.gradle/
+build/
 .idea/
 *.iml
 config/local.properties
 data/generated/
 results/
 .env
+target/

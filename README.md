@@ -1,15 +1,16 @@
 # largescale
 
-Java·MySQL 대용량 CSV 적재 실험 프로젝트. Java 17, Maven, JDBC를 사용합니다.
+Java·MySQL 대용량 CSV 적재 실험 프로젝트. Java 17, Gradle, JDBC를 사용합니다.
 초기 구현은 **단일 스레드 배치 INSERT + 배치당 커밋**입니다. 이 구현을 성능 측정의 기준으로 삼고 `CsvLoader`를 구현하여 멀티스레드 배치로 확장합니다.
 
 ## 시작
 
-프로젝트 폴더에서 JDK 17로 실행합니다. Maven Wrapper가 Maven 3.9.9를 준비하므로 별도 Maven 설치는 필요하지 않습니다. 첫 빌드에는 네트워크 연결이 필요합니다.
+프로젝트 폴더에서 JDK 17로 실행합니다. Gradle Wrapper가 Gradle 9.1.0을 준비하므로 별도 Gradle 설치는 필요하지 않습니다. 첫 빌드에는 네트워크 연결이 필요합니다.
 
 ```powershell
-.\mvnw.cmd clean verify
-java -jar target/largescale-0.1.0-SNAPSHOT.jar validate
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-17'
+.\gradlew.bat clean build
+.\gradlew.bat run --args="validate"
 ```
 
 `validate`는 DB 연결 없이 샘플 CSV의 헤더·타입·레코드를 검증합니다.
@@ -18,7 +19,7 @@ MySQL 8.4 이상에서 `sql/schema.sql`을 직접 실행한 뒤, 환경 변수�
 ```powershell
 $env:APP_DB_USER = 'your_user'
 $env:APP_DB_PASSWORD = 'your_password'
-java -jar target/largescale-0.1.0-SNAPSHOT.jar load
+.\gradlew.bat run --args="load"
 ```
 
 접속 주소·CSV 경로는 `config/application.properties`에 있습니다. 설정을 복사한 `config/local.properties`는 Git 제외 대상입니다.
@@ -26,12 +27,26 @@ java -jar target/largescale-0.1.0-SNAPSHOT.jar load
 각 레코드를 `addBatch()`로 추가하고 설정한 수량마다 `executeBatch()`와 `commit()`을 실행합니다. 마지막 잔여 배치도 커밋합니다.
 
 ```powershell
-java -jar target/largescale-0.1.0-SNAPSHOT.jar validate config/local.properties
-java -jar target/largescale-0.1.0-SNAPSHOT.jar load config/local.properties
+.\gradlew.bat run --args="validate config/local.properties"
+.\gradlew.bat run --args="load config/local.properties"
 ```
 
 상대 경로는 실행한 현재 폴더 기준입니다. 사용자·비밀번호는 환경 변수로만 설정하며 커밋하지 않습니다.
 실행 명령은 테이블 생성·초기화 SQL을 자동 실행하지 않습니다. 반복 실험 전 전용 테스트 테이블에서 `sql/reset.sql`을 직접 실행하고, 적재 후 `sql/verify.sql`로 결과를 확인합니다.
+
+## 배포와 실행
+
+기본 application 플러그인으로 의존성·실행 스크립트를 포함한 배포본을 생성합니다.
+
+```powershell
+.\gradlew.bat installDist
+.\build\install\largescale\bin\largescale.bat validate
+.\gradlew.bat distZip
+```
+
+배포 ZIP은 `build/distributions/largescale-0.1.0-SNAPSHOT.zip`입니다. 압축을 푼 배포 폴더에서 `bin/`의 실행 스크립트를 실행하면 동봉된 설정·샘플 데이터를 사용합니다. 프로젝트의 일반 JAR만으로는 런타임 의존성이 포함되지 않으므로 실행 스크립트를 사용합니다.
+Linux/macOS에서는 `./gradlew`와 `bin/largescale`을 사용합니다.
+Gradle Wrapper 배포판 다운로드에는 공식 SHA-256 체크섬 검증을 적용했습니다.
 
 ## 입력 계약과 초기 타입 가정
 
@@ -81,7 +96,7 @@ src/test/           CSV 계약·배치 트랜잭션 검증
 
 ## 확인한 범위
 
-빌드·패키징 성공, CSV 파싱 6개와 배치 처리 9개 테스트 통과, 실행 JAR에서 샘플 3행 검증을 확인했습니다.
+빌드·패키징 성공, CSV 파싱 6개와 배치 처리 9개 테스트 통과, Gradle 실행·배포 스크립트에서 샘플 3행 검증을 확인했습니다.
 배치 테스트는 JDBC 테스트 더블로 전체/잔여/빈 배치, 파싱·실행·커밋 실패 시 롤백, NULL 바인딩을 검증합니다.
 실제 MySQL 연결·INSERT는 접속 환경이 제공되지 않아 아직 검증하지 않았습니다.
 
